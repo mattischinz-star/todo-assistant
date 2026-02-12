@@ -116,7 +116,22 @@ const SpeechRecognizer = {
     // Abbrechen
     abort() {
         if (this.recognition) {
-            this.recognition.abort();
+            try {
+                this.recognition.abort();
+                this.recognition.stop();
+            } catch (e) {
+                console.log('Fehler beim Stoppen:', e);
+            }
+            this.isListening = false;
         }
+    },
+
+    // Komplett zurücksetzen (für iOS)
+    reset() {
+        this.abort();
+        if (this.recognition) {
+            this.recognition = null;
+        }
+        this.init();
     }
 };

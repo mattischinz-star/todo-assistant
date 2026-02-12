@@ -96,24 +96,25 @@ const App = {
             this.showError(message);
         };
 
-        // Mikrofon stoppen wenn App in den Hintergrund geht
+        // Mikrofon stoppen wenn App in den Hintergrund geht (besonders wichtig für iOS)
+        const stopMicrophone = () => {
+            if (SpeechRecognizer.isListening) {
+                console.log('Stoppe Mikrofon (App im Hintergrund)');
+                SpeechRecognizer.reset();
+                document.getElementById('voiceBtn').classList.remove('recording');
+                document.getElementById('recordingIndicator').classList.add('hidden');
+            }
+        };
+
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && SpeechRecognizer.isListening) {
-                SpeechRecognizer.abort();
-            }
+            if (document.hidden) stopMicrophone();
         });
 
-        window.addEventListener('pagehide', () => {
-            if (SpeechRecognizer.isListening) {
-                SpeechRecognizer.abort();
-            }
-        });
+        window.addEventListener('pagehide', stopMicrophone);
+        window.addEventListener('blur', stopMicrophone);
 
-        window.addEventListener('blur', () => {
-            if (SpeechRecognizer.isListening) {
-                SpeechRecognizer.abort();
-            }
-        });
+        // iOS spezifisch
+        window.addEventListener('freeze', stopMicrophone);
     },
 
     // Spracheingabe umschalten
@@ -389,10 +390,15 @@ const App = {
 
         SettingsStorage.setApiKey(apiKey);
 
-        if (notificationsEnabled && NotificationManager.permission !== 'granted') {
-            const granted = await NotificationManager.requestPermission();
-            if (!granted) {
-                this.showError('Benachrichtigungsberechtigung wurde nicht erteilt.');
+        if (notificationsEnabled) {
+            const result = await NotificationManager.requestPermission();
+
+            if (result === 'ios-not-installed') {
+                this.showError('Für Benachrichtigungen auf iOS: App erst zum Home-Bildschirm hinzufügen (Teilen → Zum Home-Bildschirm), dann erneut aktivieren.');
+                document.getElementById('notificationsToggle').checked = false;
+                SettingsStorage.setNotificationsEnabled(false);
+            } else if (!result) {
+                this.showError('Benachrichtigungsberechtigung wurde nicht erteilt. Bitte in den Geräte-Einstellungen erlauben.');
                 document.getElementById('notificationsToggle').checked = false;
                 SettingsStorage.setNotificationsEnabled(false);
             } else {

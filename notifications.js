@@ -2,9 +2,14 @@
 const NotificationManager = {
     isSupported: false,
     permission: 'default',
+    isIOS: false,
 
     // Initialisierung
     async init() {
+        // iOS Erkennung
+        this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
         this.isSupported = 'Notification' in window;
 
         if (this.isSupported) {
@@ -13,12 +18,25 @@ const NotificationManager = {
 
         console.log('Notifications supported:', this.isSupported);
         console.log('Permission:', this.permission);
+        console.log('iOS detected:', this.isIOS);
 
         return this.isSupported;
     },
 
+    // Prüfen ob PWA auf Home-Screen installiert ist (iOS)
+    isStandalone() {
+        return window.navigator.standalone === true ||
+            window.matchMedia('(display-mode: standalone)').matches;
+    },
+
     // Berechtigung anfordern
     async requestPermission() {
+        // iOS Safari ohne PWA unterstützt keine Notifications
+        if (this.isIOS && !this.isStandalone()) {
+            console.log('iOS: Notifications nur in installierter PWA verfügbar');
+            return 'ios-not-installed';
+        }
+
         if (!this.isSupported) {
             return false;
         }
