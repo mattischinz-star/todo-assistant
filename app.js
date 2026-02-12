@@ -155,6 +155,7 @@ const App = {
         // Event Listener für Tasks
         taskList.querySelectorAll('.task-item').forEach(item => {
             const taskId = parseInt(item.dataset.id);
+            const taskInner = item.querySelector('.task-inner');
 
             // Checkbox Click
             item.querySelector('.task-checkbox').addEventListener('click', async (e) => {
@@ -163,7 +164,60 @@ const App = {
             });
 
             // Task Click (Details)
-            item.addEventListener('click', () => this.openTaskModal(taskId));
+            taskInner.addEventListener('click', () => this.openTaskModal(taskId));
+
+            // Swipe to Delete
+            this.setupSwipeToDelete(item, taskId);
+        });
+    },
+
+    // Swipe to Delete Setup
+    setupSwipeToDelete(item, taskId) {
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+
+        const taskInner = item.querySelector('.task-inner');
+
+        item.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+            taskInner.style.transition = 'none';
+        }, { passive: true });
+
+        item.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentX = e.touches[0].clientX;
+            const diffX = currentX - startX;
+
+            // Nur nach links swipen erlauben
+            if (diffX < 0) {
+                const translateX = Math.max(diffX, -100);
+                taskInner.style.transform = `translateX(${translateX}px)`;
+            }
+        }, { passive: true });
+
+        item.addEventListener('touchend', async () => {
+            if (!isDragging) return;
+            isDragging = false;
+
+            const diffX = currentX - startX;
+            taskInner.style.transition = 'transform 0.3s ease';
+
+            if (diffX < -80) {
+                // Löschen
+                taskInner.style.transform = 'translateX(-100%)';
+                setTimeout(async () => {
+                    await TodoStorage.deleteTask(taskId);
+                    await this.renderTasks();
+                }, 200);
+            } else {
+                // Zurücksetzen
+                taskInner.style.transform = 'translateX(0)';
+            }
+
+            startX = 0;
+            currentX = 0;
         });
     },
 
@@ -171,28 +225,31 @@ const App = {
     createTaskHTML(task) {
         const prioClass = `prio-${task.priority}`;
         const completedClass = task.completed ? 'completed' : '';
-        const dueInfo = this.formatDueDate(task.dueDate);
+        const dueInfo = this.formatDueDate(task.dueDate, task.dueTime);
 
         return `
             <div class="task-item ${prioClass} ${completedClass}" data-id="${task.id}">
-                <div class="task-checkbox">
-                    <svg viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
-                    </svg>
-                </div>
-                <div class="task-content">
-                    <div class="task-title">${this.escapeHTML(task.title)}</div>
-                    <div class="task-meta">
-                        <span class="prio-badge ${task.priority}">${this.formatPriority(task.priority)}</span>
-                        ${dueInfo ? `<span class="${dueInfo.class}">${dueInfo.text}</span>` : ''}
+                <div class="task-inner">
+                    <div class="task-checkbox">
+                        <svg viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+                        </svg>
+                    </div>
+                    <div class="task-content">
+                        <div class="task-title">${this.escapeHTML(task.title)}</div>
+                        <div class="task-meta">
+                            <span class="prio-badge ${task.priority}">${this.formatPriority(task.priority)}</span>
+                            ${dueInfo ? `<span class="${dueInfo.class}">${dueInfo.text}</span>` : ''}
+                        </div>
                     </div>
                 </div>
+                <div class="task-delete">Löschen</div>
             </div>
         `;
     },
 
     // Fälligkeitsdatum formatieren
-    formatDueDate(dueDate) {
+    formatDueDate(dueDate, dueTime) {
         if (!dueDate) return null;
 
         const due = new Date(dueDate);
@@ -201,17 +258,18 @@ const App = {
         due.setHours(0, 0, 0, 0);
 
         const diffDays = Math.floor((due - today) / (1000 * 60 * 60 * 24));
+        const timeStr = dueTime ? ` um ${dueTime}` : '';
 
         if (diffDays < 0) {
-            return { text: `Überfällig (${this.formatDate(dueDate)})`, class: 'overdue' };
+            return { text: `Überfällig (${this.formatDate(dueDate)}${timeStr})`, class: 'overdue' };
         } else if (diffDays === 0) {
-            return { text: 'Heute fällig', class: 'due-soon' };
+            return { text: `Heute${timeStr}`, class: 'due-soon' };
         } else if (diffDays === 1) {
-            return { text: 'Morgen fällig', class: 'due-soon' };
+            return { text: `Morgen${timeStr}`, class: 'due-soon' };
         } else if (diffDays <= 7) {
-            return { text: `In ${diffDays} Tagen`, class: '' };
+            return { text: `In ${diffDays} Tagen${timeStr}`, class: '' };
         } else {
-            return { text: this.formatDate(dueDate), class: '' };
+            return { text: `${this.formatDate(dueDate)}${timeStr}`, class: '' };
         }
     },
 
@@ -249,7 +307,7 @@ const App = {
         document.getElementById('taskModalPriority').innerHTML =
             `<span class="prio-badge ${task.priority}">${this.formatPriority(task.priority)}</span>`;
 
-        const dueInfo = this.formatDueDate(task.dueDate);
+        const dueInfo = this.formatDueDate(task.dueDate, task.dueTime);
         document.getElementById('taskModalDue').textContent = dueInfo ? dueInfo.text : 'Kein Datum';
 
         document.getElementById('taskModal').classList.remove('hidden');

@@ -112,21 +112,43 @@ html {
 }
 
 .task-item {
-    background: var(--bg-light);
+    background: var(--danger);
     border-radius: 12px;
-    padding: 1rem;
     margin-bottom: 0.75rem;
     box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    border-left: 4px solid var(--prio-medium);
+}
+
+.task-inner {
+    background: var(--bg-light);
+    padding: 1rem;
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
     cursor: pointer;
-    transition: transform 0.2s, opacity 0.2s;
-    border-left: 4px solid var(--prio-medium);
+    transition: transform 0.3s ease;
+    position: relative;
+    z-index: 1;
 }
 
-.task-item:active {
+.task-inner:active {
     transform: scale(0.98);
+}
+
+.task-delete {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .task-item.completed {

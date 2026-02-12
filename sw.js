@@ -1,5 +1,5 @@
 // Service Worker für ToDo Assistent PWA
-const CACHE_NAME = 'todo-assistant-v2';
+const CACHE_NAME = 'todo-assistant-v3';
 const urlsToCache = [
     '/',
     '/index.html',

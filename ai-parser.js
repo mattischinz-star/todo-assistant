@@ -16,6 +16,7 @@ Analysiere den Text und extrahiere:
 1. Titel: Eine kurze, prägnante Beschreibung der Aufgabe
 2. Priorität: "high", "medium" oder "low" (basierend auf Wörtern wie "wichtig", "dringend", "später", etc.)
 3. Fälligkeitsdatum: Im Format YYYY-MM-DD (heute ist ${todayStr})
+4. Uhrzeit: Im Format HH:MM (24-Stunden-Format)
 
 Interpretiere relative Datumsangaben:
 - "heute" = ${todayStr}
@@ -25,11 +26,21 @@ Interpretiere relative Datumsangaben:
 - "am Montag/Dienstag/etc" = nächster entsprechender Wochentag
 - Wenn kein Datum genannt wird, setze null
 
+Interpretiere Uhrzeiten:
+- "um 10 Uhr" = "10:00"
+- "um halb 3" = "14:30"
+- "um viertel nach 5" = "17:15"
+- "nachmittags" = "15:00"
+- "morgens" = "09:00"
+- "abends" = "19:00"
+- Wenn keine Uhrzeit genannt wird, setze null
+
 Antworte NUR mit einem JSON-Objekt im folgenden Format:
 {
   "title": "string",
   "priority": "high" | "medium" | "low",
-  "dueDate": "YYYY-MM-DD" | null
+  "dueDate": "YYYY-MM-DD" | null,
+  "dueTime": "HH:MM" | null
 }`;
 
         try {
@@ -96,6 +107,14 @@ Antworte NUR mit einem JSON-Objekt im folgenden Format:
                 }
             }
 
+            // Uhrzeit validieren
+            if (parsed.dueTime) {
+                const timeRegex = /^\d{2}:\d{2}$/;
+                if (!timeRegex.test(parsed.dueTime)) {
+                    parsed.dueTime = null;
+                }
+            }
+
             console.log('Geparste Aufgabe:', parsed);
             return parsed;
 
@@ -110,7 +129,8 @@ Antworte NUR mit einem JSON-Objekt im folgenden Format:
         const result = {
             title: text,
             priority: 'medium',
-            dueDate: null
+            dueDate: null,
+            dueTime: null
         };
 
         // Einfache Prioritätserkennung
@@ -133,6 +153,14 @@ Antworte NUR mit einem JSON-Objekt im folgenden Format:
             const dayAfter = new Date(today);
             dayAfter.setDate(dayAfter.getDate() + 2);
             result.dueDate = dayAfter.toISOString().split('T')[0];
+        }
+
+        // Einfache Uhrzeiterkennung
+        const timeMatch = lowText.match(/um (\d{1,2})(:\d{2})?\s*(uhr)?/);
+        if (timeMatch) {
+            const hour = timeMatch[1].padStart(2, '0');
+            const minutes = timeMatch[2] ? timeMatch[2].slice(1) : '00';
+            result.dueTime = `${hour}:${minutes}`;
         }
 
         return result;
