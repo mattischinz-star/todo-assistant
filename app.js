@@ -95,6 +95,25 @@ const App = {
         SpeechRecognizer.onError = (message) => {
             this.showError(message);
         };
+
+        // Mikrofon stoppen wenn App in den Hintergrund geht
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && SpeechRecognizer.isListening) {
+                SpeechRecognizer.abort();
+            }
+        });
+
+        window.addEventListener('pagehide', () => {
+            if (SpeechRecognizer.isListening) {
+                SpeechRecognizer.abort();
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            if (SpeechRecognizer.isListening) {
+                SpeechRecognizer.abort();
+            }
+        });
     },
 
     // Spracheingabe umschalten
