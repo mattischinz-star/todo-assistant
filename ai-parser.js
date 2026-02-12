@@ -35,12 +35,18 @@ Interpretiere Uhrzeiten:
 - "abends" = "19:00"
 - Wenn keine Uhrzeit genannt wird, setze null
 
+Erinnerung:
+- Wenn "erinnere mich", "Erinnerung", "nicht vergessen" o.ä. erwähnt wird: reminder = true
+- Wenn ein Datum/Uhrzeit genannt wird, ist standardmäßig reminder = true
+- Sonst reminder = false
+
 Antworte NUR mit einem JSON-Objekt im folgenden Format:
 {
   "title": "string",
   "priority": "high" | "medium" | "low",
   "dueDate": "YYYY-MM-DD" | null,
-  "dueTime": "HH:MM" | null
+  "dueTime": "HH:MM" | null,
+  "reminder": true | false
 }`;
 
         try {
@@ -130,7 +136,8 @@ Antworte NUR mit einem JSON-Objekt im folgenden Format:
             title: text,
             priority: 'medium',
             dueDate: null,
-            dueTime: null
+            dueTime: null,
+            reminder: false
         };
 
         // Einfache Prioritätserkennung
@@ -145,14 +152,17 @@ Antworte NUR mit einem JSON-Objekt im folgenden Format:
         const today = new Date();
         if (lowText.includes('heute')) {
             result.dueDate = today.toISOString().split('T')[0];
+            result.reminder = true;
         } else if (lowText.includes('morgen')) {
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
             result.dueDate = tomorrow.toISOString().split('T')[0];
+            result.reminder = true;
         } else if (lowText.includes('übermorgen')) {
             const dayAfter = new Date(today);
             dayAfter.setDate(dayAfter.getDate() + 2);
             result.dueDate = dayAfter.toISOString().split('T')[0];
+            result.reminder = true;
         }
 
         // Einfache Uhrzeiterkennung
@@ -161,6 +171,12 @@ Antworte NUR mit einem JSON-Objekt im folgenden Format:
             const hour = timeMatch[1].padStart(2, '0');
             const minutes = timeMatch[2] ? timeMatch[2].slice(1) : '00';
             result.dueTime = `${hour}:${minutes}`;
+            result.reminder = true;
+        }
+
+        // Erinnerungs-Keywords
+        if (lowText.includes('erinner') || lowText.includes('nicht vergessen')) {
+            result.reminder = true;
         }
 
         return result;

@@ -390,6 +390,29 @@ html {
     margin-bottom: 0.5rem;
 }
 
+.reminder-toggle {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.reminder-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.reminder-toggle input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+}
+
+.reminder-icon {
+    font-size: 0.9rem;
+    margin-left: 0.25rem;
+}
+
 .modal-actions {
     display: flex;
     gap: 0.75rem;

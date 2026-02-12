@@ -58,6 +58,7 @@ const App = {
         document.getElementById('closeTaskModal').addEventListener('click', () => this.closeTaskModal());
         document.getElementById('completeTask').addEventListener('click', () => this.completeCurrentTask());
         document.getElementById('deleteTask').addEventListener('click', () => this.deleteCurrentTask());
+        document.getElementById('taskReminderToggle').addEventListener('change', (e) => this.toggleReminder(e.target.checked));
 
         // Reminder Banner
         document.getElementById('dismissReminder').addEventListener('click', () => {
@@ -226,6 +227,7 @@ const App = {
         const prioClass = `prio-${task.priority}`;
         const completedClass = task.completed ? 'completed' : '';
         const dueInfo = this.formatDueDate(task.dueDate, task.dueTime);
+        const reminderIcon = task.reminder ? '<span class="reminder-icon" title="Erinnerung aktiv">🔔</span>' : '';
 
         return `
             <div class="task-item ${prioClass} ${completedClass}" data-id="${task.id}">
@@ -236,7 +238,7 @@ const App = {
                         </svg>
                     </div>
                     <div class="task-content">
-                        <div class="task-title">${this.escapeHTML(task.title)}</div>
+                        <div class="task-title">${this.escapeHTML(task.title)} ${reminderIcon}</div>
                         <div class="task-meta">
                             <span class="prio-badge ${task.priority}">${this.formatPriority(task.priority)}</span>
                             ${dueInfo ? `<span class="${dueInfo.class}">${dueInfo.text}</span>` : ''}
@@ -310,6 +312,10 @@ const App = {
         const dueInfo = this.formatDueDate(task.dueDate, task.dueTime);
         document.getElementById('taskModalDue').textContent = dueInfo ? dueInfo.text : 'Kein Datum';
 
+        // Erinnerung Toggle
+        const reminderToggle = document.getElementById('taskReminderToggle');
+        reminderToggle.checked = task.reminder || false;
+
         document.getElementById('taskModal').classList.remove('hidden');
     },
 
@@ -333,6 +339,14 @@ const App = {
         if (this.currentTaskId && confirm('Aufgabe wirklich löschen?')) {
             await TodoStorage.deleteTask(this.currentTaskId);
             this.closeTaskModal();
+            await this.renderTasks();
+        }
+    },
+
+    // Erinnerung umschalten
+    async toggleReminder(enabled) {
+        if (this.currentTaskId) {
+            await TodoStorage.updateTask(this.currentTaskId, { reminder: enabled });
             await this.renderTasks();
         }
     },

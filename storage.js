@@ -52,6 +52,7 @@ const TodoStorage = {
                 priority: task.priority || 'medium', // high, medium, low
                 dueDate: task.dueDate || null,
                 dueTime: task.dueTime || null,
+                reminder: task.reminder || false,
                 createdAt: new Date().toISOString(),
                 completed: false,
                 completedAt: null
