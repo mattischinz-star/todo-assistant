@@ -143,18 +143,12 @@ const App = {
     // Tasks rendern
     async renderTasks() {
         const taskList = document.getElementById('taskList');
-        const emptyState = document.getElementById('emptyState');
-
         const tasks = await TodoStorage.getAllTasks();
 
         if (tasks.length === 0) {
-            taskList.innerHTML = '';
-            taskList.appendChild(emptyState);
-            emptyState.style.display = 'block';
+            taskList.innerHTML = `<p class="empty-state">Keine Aufgaben vorhanden.<br>Tippe auf das Mikrofon um eine Aufgabe hinzuzufügen.</p>`;
             return;
         }
-
-        emptyState.style.display = 'none';
 
         taskList.innerHTML = tasks.map(task => this.createTaskHTML(task)).join('');
 
